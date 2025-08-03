@@ -17,8 +17,8 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-async fn process_excel(input_path: String, output_path: String, column_name: String) -> Result<ProcessResult, String> {
-    match process_excel_file(&input_path, &output_path, &column_name).await {
+async fn process_excel(input_path: String, output_path: String, column_name: String, create_date: String, update_date: String) -> Result<ProcessResult, String> {
+    match process_excel_file(&input_path, &output_path, &column_name, &create_date, &update_date).await {
         Ok(_) => Ok(ProcessResult {
             success: true,
             message: "Excel文件处理成功".to_string(),
@@ -32,7 +32,7 @@ async fn process_excel(input_path: String, output_path: String, column_name: Str
     }
 }
 
-async fn process_excel_file(input_path: &str, output_path: &str, column_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn process_excel_file(input_path: &str, output_path: &str, column_name: &str, create_date: &str, update_date: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 创建映射关系
     let mut mapping = HashMap::new();
     mapping.insert("鼓楼", ("江苏省徐州市鼓楼区", "320000,320300,320302"));
@@ -106,13 +106,21 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
             worksheet.write_string(row_idx as u32, col_idx as u16, &cell_value, None)?;
         }
         
-        // 如果是标题行，添加"省市区编码"列标题
+        // 如果是标题行，添加"省市区编码"、"创建日期"和"更新日期"列标题
         if row_idx == 0 {
             let code_col_index = row.len() as u16;
+            let create_date_col_index = code_col_index + 1;
+            let update_date_col_index = code_col_index + 2;
+            
             worksheet.write_string(0, code_col_index, "省市区编码", None)?;
+            worksheet.write_string(0, create_date_col_index, "创建日期", None)?;
+            worksheet.write_string(0, update_date_col_index, "更新日期", None)?;
         } else {
-            // 为数据行添加对应的编码
+            // 为数据行添加对应的编码和日期
             let code_col_index = row.len() as u16;
+            let create_date_col_index = code_col_index + 1;
+            let update_date_col_index = code_col_index + 2;
+            
             let mut code_value = "".to_string();
             
             if let Some(cell) = row.get(col_index) {
@@ -130,6 +138,8 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
             }
             
             worksheet.write_string(row_idx as u32, code_col_index, &code_value, None)?;
+            worksheet.write_string(row_idx as u32, create_date_col_index, create_date, None)?;
+            worksheet.write_string(row_idx as u32, update_date_col_index, update_date, None)?;
         }
     }
     

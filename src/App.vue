@@ -68,11 +68,16 @@ async function processFile() {
       return;
     }
     
+    // 生成当前ISO格式日期
+    const currentDate = new Date().toISOString();
+    
     // 调用Rust命令处理Excel文件
     const processResult = await invoke('process_excel', {
       inputPath: selectedFile.value,
       outputPath: outputPath,
-      columnName: columnName.value.trim()
+      columnName: columnName.value.trim(),
+      createDate: currentDate,
+      updateDate: currentDate
     });
     
     result.value = processResult;
