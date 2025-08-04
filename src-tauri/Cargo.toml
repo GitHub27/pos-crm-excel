@@ -29,3 +29,15 @@ xlsxwriter = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["full"] }
 
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser", "processthreadsapi"] }
+
+# Windows 7 compatibility settings
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# Windows 7 compatibility is configured in .cargo/config.toml
+

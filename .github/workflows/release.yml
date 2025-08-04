@@ -16,6 +16,9 @@ jobs:
         include:
           - platform: 'windows-latest'
             args: '--target x86_64-pc-windows-msvc'
+          - platform: 'windows-2019'
+            args: '--target i686-pc-windows-msvc'
+            rust_target: 'i686-pc-windows-msvc'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -31,7 +34,7 @@ jobs:
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.rust_target || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2

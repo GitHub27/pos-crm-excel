@@ -1,3 +1,15 @@
-[target.x86_64-pc-windows-gnu]
-linker = "x86_64-w64-mingw32-gcc"
-ar = "x86_64-w64-mingw32-ar"
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+  "-C", "target-feature=+crt-static",
+  "-C", "link-arg=/SUBSYSTEM:WINDOWS,6.1"
+]
+
+[target.i686-pc-windows-msvc]
+rustflags = [
+  "-C", "target-feature=+crt-static",
+  "-C", "link-arg=/SUBSYSTEM:WINDOWS,6.1"
+]
+
+# Ensure static linking for Windows 7 compatibility
+[build]
+target-dir = "target"
