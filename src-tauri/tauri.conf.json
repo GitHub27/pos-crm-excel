@@ -36,17 +36,8 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
       "tsp": false,
-      "wix": {
-        "language": "en-US",
-        "template": null
-      },
-      "nsis": {
-        "template": null,
-        "preInstallSection": null,
-        "installSection": null,
-        "languages": ["English"],
-        "displayLanguageSelector": false
-      }
+      "wix": null,
+      "nsis": null
     }
   }
 }
