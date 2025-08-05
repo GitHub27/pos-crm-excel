@@ -16,7 +16,7 @@ jobs:
         include:
           - platform: 'windows-latest'
             args: '--target x86_64-pc-windows-msvc'
-          - platform: 'windows-2019'
+          - platform: 'windows-2022'
             args: '--target i686-pc-windows-msvc'
             rust_target: 'i686-pc-windows-msvc'
 
