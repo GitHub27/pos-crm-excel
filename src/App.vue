@@ -47,6 +47,23 @@ async function processFile() {
     processing.value = true;
     result.value = null;
     
+    // 1. 生成当前ISO格式日期（用于调用后端验证和处理）
+    const currentDate = new Date().toISOString();
+    
+    // 2. 第一阶段：调用后端预检文件（不传 outputPath 代表只做校验）
+    // 我们需要在 Rust 端增加一个专门用于预检的接口，或者修改现有的 process_excel 让它支持预检模式
+    const precheckResult = await invoke('precheck_excel', {
+      inputPath: selectedFile.value,
+      columnName: columnName.value.trim(),
+    });
+
+    if (!precheckResult.success) {
+      alert('数据异常，请修改后重新上传: \n\n' + precheckResult.message);
+      processing.value = false;
+      return; // 阻断后续的保存文件弹窗
+    }
+    
+    // 3. 预检通过后，才弹出保存文件对话框
     // 生成当天日期作为默认文件名
     const today = new Date();
     const dateStr = today.getFullYear() + '-' + 
@@ -68,10 +85,7 @@ async function processFile() {
       return;
     }
     
-    // 生成当前ISO格式日期
-    const currentDate = new Date().toISOString();
-    
-    // 调用Rust命令处理Excel文件
+    // 4. 第二阶段：正式调用Rust命令处理并生成Excel文件
     const processResult = await invoke('process_excel', {
       inputPath: selectedFile.value,
       outputPath: outputPath,
@@ -85,7 +99,7 @@ async function processFile() {
     if (processResult.success) {
       alert('文件处理成功！已保存到: ' + outputPath);
     } else {
-      alert('处理失败: ' + processResult.message);
+      alert('处理失败，请修改后重新上传: ' + processResult.message);
     }
   } catch (error) {
     console.error('处理文件时出错:', error);
@@ -149,7 +163,7 @@ function resetForm() {
           <p v-if="result.output_path">保存位置: {{ result.output_path }}</p>
         </div>
         <div v-else class="error">
-          <h3>❌ 处理失败</h3>
+          <h3>❌ 处理失败，请修改后重新上传</h3>
           <p>{{ result.message }}</p>
         </div>
       </div>
