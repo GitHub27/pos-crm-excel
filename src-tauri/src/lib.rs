@@ -33,6 +33,77 @@ async fn process_excel(input_path: String, output_path: String, column_name: Str
     }
 }
 
+/// 预检查 Excel 数据中的地址歧义，不生成输出文件。
+#[tauri::command]
+async fn precheck_excel(input_path: String, column_name: String) -> Result<ProcessResult, String> {
+    match precheck_excel_file(&input_path, &column_name) {
+        Ok(_) => Ok(ProcessResult {
+            success: true,
+            message: "预检查通过".to_string(),
+            output_path: None,
+        }),
+        Err(e) => Ok(ProcessResult {
+            success: false,
+            message: e.to_string(),
+            output_path: None,
+        }),
+    }
+}
+
+/// 执行地址歧义检查；若存在“开发区/高新区”且未标明城市则返回错误。
+fn precheck_excel_file(input_path: &str, column_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut workbook: Xlsx<_> = open_workbook(input_path)?;
+    let sheet_names = workbook.sheet_names().to_owned();
+
+    if sheet_names.is_empty() {
+        return Err("Excel文件中没有工作表".into());
+    }
+
+    let range = workbook.worksheet_range(&sheet_names[0])
+        .map_err(|e| format!("无法读取工作表: {}", e))?;
+
+    let mut target_col_index: Option<usize> = None;
+    if let Some(first_row) = range.rows().next() {
+        for (col_idx, cell) in first_row.iter().enumerate() {
+            let cell_str = match cell {
+                calamine::Data::String(s) => s.as_str(),
+                _ => "",
+            };
+            if cell_str == column_name {
+                target_col_index = Some(col_idx);
+                break;
+            }
+        }
+    }
+
+    let col_index = target_col_index.ok_or(format!("未找到列名为'{}'的列", column_name))?;
+
+    for (row_idx, row) in range.rows().enumerate() {
+        if row_idx == 0 {
+            continue;
+        }
+        if let Some(cell) = row.get(col_index) {
+            let cell_value = match cell {
+                calamine::Data::Empty => "",
+                calamine::Data::String(s) => s.as_str(),
+                _ => "",
+            };
+
+            if cell_value.contains("高新区") || cell_value.contains("开发区") {
+                let has_xuzhou = cell_value.contains("徐州");
+                let has_suqian = cell_value.contains("宿迁");
+                let has_jining = cell_value.contains("济宁");
+
+                if !has_xuzhou && !has_suqian && !has_jining {
+                    return Err(format!("第 {} 行的数据（{}）地址存在歧义，请补充具体城市（如徐州、宿迁或济宁）", row_idx + 1, cell_value).into());
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 async fn process_excel_file(input_path: &str, output_path: &str, column_name: &str, create_date: &str, update_date: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 创建映射关系
     let mut mapping = vec![
@@ -207,7 +278,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![greet, process_excel])
+        .invoke_handler(tauri::generate_handler![greet, process_excel, precheck_excel])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
