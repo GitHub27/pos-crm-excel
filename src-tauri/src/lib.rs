@@ -93,9 +93,10 @@ fn precheck_excel_file(input_path: &str, column_name: &str) -> Result<(), Box<dy
                 let has_xuzhou = cell_value.contains("徐州");
                 let has_suqian = cell_value.contains("宿迁");
                 let has_jining = cell_value.contains("济宁");
+                let has_suzhou = cell_value.contains("宿州");
 
-                if !has_xuzhou && !has_suqian && !has_jining {
-                    return Err(format!("第 {} 行的数据（{}）地址存在歧义，请补充具体城市（如徐州、宿迁或济宁）", row_idx + 1, cell_value).into());
+                if !has_xuzhou && !has_suqian && !has_jining && !has_suzhou {
+                    return Err(format!("第 {} 行的数据（{}）地址存在歧义，请补充具体城市（如徐州、宿迁、济宁或宿州）", row_idx + 1, cell_value).into());
                 }
             }
         }
@@ -138,6 +139,17 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
         ("梁山", ("山东省济宁市梁山县", "370000,370800,370832")),
         ("曲阜", ("山东省济宁市曲阜市", "370000,370800,370881")),
         ("邹城", ("山东省济宁市邹城市", "370000,370800,370883")),
+        // 安徽省宿州市
+        ("埇桥", ("安徽省宿州市埇桥区", "340000,341300,341302")),
+        ("砀山", ("安徽省宿州市砀山县", "340000,341300,341321")),
+        ("萧县", ("安徽省宿州市萧县", "340000,341300,341322")),
+        ("灵璧", ("安徽省宿州市灵璧县", "340000,341300,341323")),
+        ("泗县", ("安徽省宿州市泗县", "340000,341300,341324")),
+        ("马鞍山现代产业园", ("安徽省宿州市宿州马鞍山现代产业园区", "340000,341300,341371")),
+        ("宿州经济技术开发区", ("安徽省宿州市宿州经济技术开发区", "340000,341300,341372")),
+        ("宿州经济开发区", ("安徽省宿州市经济开发区", "340000,341300,341390")),
+
+
     ];
 
     // 按关键字长度降序排序，保证长字符串（如"宿迁开发区"）优先匹配，避免被短字符串（如"开发区"）截胡
@@ -189,10 +201,11 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
                 let has_xuzhou = cell_value.contains("徐州");
                 let has_suqian = cell_value.contains("宿迁");
                 let has_jining = cell_value.contains("济宁");
+                let has_suzhou = cell_value.contains("宿州");
 
-                if !has_xuzhou && !has_suqian && !has_jining {
+                if !has_xuzhou && !has_suqian && !has_jining && !has_suzhou {
                     // +1 是因为 row_idx 是从 0 开始的，加上 Excel 真实的行号应该更直观 (+1 标题行, +1 row_idx)
-                    return Err(format!("第 {} 行的数据（{}）地址存在歧义，请补充具体城市（如徐州、宿迁或济宁）", row_idx + 1, cell_value).into());
+                    return Err(format!("第 {} 行的数据（{}）地址存在歧义，请补充具体城市（如徐州、宿迁、济宁或宿州）", row_idx + 1, cell_value).into());
                 }
             }
         }
@@ -222,6 +235,7 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
                     let has_xuzhou = cell_value.contains("徐州");
                     let has_suqian = cell_value.contains("宿迁");
                     let has_jining = cell_value.contains("济宁");
+                    let has_suzhou = cell_value.contains("宿州");
 
                     if has_xuzhou {
                         cell_value = "江苏省徐州市徐州经济技术开发区".to_string();
@@ -232,6 +246,9 @@ async fn process_excel_file(input_path: &str, output_path: &str, column_name: &s
                     } else if has_jining {
                         cell_value = "山东省济宁市济宁高新技术产业开发区".to_string();
                         row_code_value = "370000,370800,370871".to_string();
+                    } else if has_suzhou {
+                        cell_value = "安徽省宿州市宿州经济技术开发区".to_string();
+                        row_code_value = "340000,341300,341372".to_string();
                     }
                 } else {
                     for (key, (full_name, code)) in &mapping {
